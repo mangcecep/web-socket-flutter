@@ -1,0 +1,93 @@
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:web_socket_flutter/noti_service.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+
+void requestNotificationPermission() async {
+  if (await Permission.notification.isDenied) {
+    await Permission.notification.request();
+  }
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await NotiService.initNotification();
+
+  requestNotificationPermission();
+
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Flutter Notification Test',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
+      ),
+      home: const NotificationPage(),
+    );
+  }
+}
+
+class NotificationPage extends StatefulWidget {
+  const NotificationPage({super.key});
+
+  @override
+  State<NotificationPage> createState() => _NotificationPageState();
+}
+
+class _NotificationPageState extends State<NotificationPage> {
+  late WebSocketChannel channel;
+  String messageFromServer = '';
+
+  @override
+  void initState() {
+    super.initState();
+    initWebSocket();
+  }
+
+  // Inisialisasi WebSocket
+  void initWebSocket() {
+    channel = WebSocketChannel.connect(
+      Uri.parse('ws://10.0.2.2:3000'),
+    );
+
+    channel.stream.listen((message) {
+      var data = jsonDecode(message);
+      NotiService.showNotification(
+        title: data["recipient"],
+        body: data["message"],
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    channel.sink.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Realtime Notifikasi"),
+      ),
+      body: Center(
+        child: Column(
+          children: [
+            Text("Menunggu notifikasi..."),
+            Text(messageFromServer),
+          ],
+        ),
+      ),
+    );
+  }
+}
