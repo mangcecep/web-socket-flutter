@@ -1,93 +1,140 @@
-import 'dart:convert';
-
+import 'package:circle_nav_bar/circle_nav_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:web_socket_flutter/noti_service.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:web_socket_flutter/view/history_view.dart';
+import 'package:web_socket_flutter/view/home_view.dart';
+import 'package:web_socket_flutter/view/profile_view.dart';
 
-void requestNotificationPermission() async {
-  if (await Permission.notification.isDenied) {
-    await Permission.notification.request();
-  }
-}
+void main() => runApp(const Home());
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+class Home extends StatelessWidget {
+  const Home({super.key});
 
-  await NotiService.initNotification();
-
-  requestNotificationPermission();
-
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
+  @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Notification Test',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const NotificationPage(),
+      title: "PPLG Apps",
+      home: const HomePage(),
     );
   }
 }
 
-class NotificationPage extends StatefulWidget {
-  const NotificationPage({super.key});
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
 
   @override
-  State<NotificationPage> createState() => _NotificationPageState();
+  State<HomePage> createState() => _HomePageState();
 }
 
-class _NotificationPageState extends State<NotificationPage> {
-  late WebSocketChannel channel;
-  String messageFromServer = '';
+class _HomePageState extends State<HomePage> {
+  int _currentIndex = 0;
+  int get tabIndex => _currentIndex;
+  set tabIndex(int v) {
+    _currentIndex = v;
+    setState(() {});
+  }
+
+  final tabs = [
+    const HomeView(),
+    const HistoryView(),
+    const ProfileView(),
+  ];
+  late PageController pageController;
 
   @override
   void initState() {
     super.initState();
-    initWebSocket();
-  }
-
-  // Inisialisasi WebSocket
-  void initWebSocket() {
-    channel = WebSocketChannel.connect(
-      Uri.parse('ws://10.0.2.2:3000'),
-    );
-
-    channel.stream.listen((message) {
-      var data = jsonDecode(message);
-      NotiService.showNotification(
-        title: data["recipient"],
-        body: data["message"],
-      );
-    });
-  }
-
-  @override
-  void dispose() {
-    channel.sink.close();
-    super.dispose();
+    pageController = PageController(initialPage: _currentIndex);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Realtime Notifikasi"),
-      ),
-      body: Center(
-        child: Column(
+        appBar: AppBar(
+          actions: [],
+          title: const Text(
+            "PPLG Apps",
+            style: TextStyle(color: Colors.white),
+          ),
+          backgroundColor: const Color.fromARGB(255, 72, 3, 248),
+        ),
+        body: PageView(
+          controller: pageController,
+          onPageChanged: (v) {
+            tabIndex = v;
+          },
           children: [
-            Text("Menunggu notifikasi..."),
-            Text(messageFromServer),
+            SizedBox(
+              width: double.infinity,
+              height: double.infinity,
+              // color: Colors.red,
+              child: const HomeView(),
+            ),
+            SizedBox(
+              width: double.infinity,
+              height: double.infinity,
+              // color: Colors.green,
+              child: const HistoryView(),
+            ),
+            SizedBox(
+              width: double.infinity,
+              height: double.infinity,
+              // color: Colors.blue,
+              child: const ProfileView(),
+            ),
           ],
         ),
-      ),
-    );
+        bottomNavigationBar: CircleNavBar(
+          activeIcons: const [
+            Icon(Icons.person, color: Colors.deepPurple),
+            Icon(Icons.home, color: Colors.deepPurple),
+            Icon(Icons.favorite, color: Colors.deepPurple),
+          ],
+          inactiveIcons: const [
+            Text("My"),
+            Text("Home"),
+            Text("Like"),
+          ],
+          color: Colors.white,
+          height: 60,
+          circleWidth: 60,
+          activeIndex: _currentIndex,
+          onTap: (index) {
+            _currentIndex = index;
+            pageController.jumpToPage(index);
+          },
+          padding: const EdgeInsets.only(left: 16, right: 16, bottom: 20),
+          cornerRadius: const BorderRadius.only(
+            topLeft: Radius.circular(8),
+            topRight: Radius.circular(8),
+            bottomRight: Radius.circular(24),
+            bottomLeft: Radius.circular(24),
+          ),
+          shadowColor: Colors.deepPurple,
+          elevation: 10,
+        )
+        //  BottomNavigationBar(
+        //   currentIndex: _currentIndex,
+        //   onTap: (index) {
+        //     setState(() => _currentIndex = index);
+        //   },
+        //   items: [
+        //     BottomNavigationBarItem(
+        //       icon: Icon(Icons.home),
+        //       label: 'Home',
+        //       activeIcon: Icon(
+        //         Icons.build_outlined,
+        //       ),
+        //     ),
+        //     BottomNavigationBarItem(
+        //       icon: Icon(Icons.history),
+        //       label: 'History',
+        //     ),
+        //     BottomNavigationBarItem(
+        //       icon: Icon(Icons.person),
+        //       label: 'Profile',
+        //     ),
+        //   ],
+        // ),
+        );
   }
 }
