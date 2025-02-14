@@ -2,7 +2,9 @@ import 'package:circle_nav_bar/circle_nav_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:web_socket_flutter/view/history_view.dart';
 import 'package:web_socket_flutter/view/home_view.dart';
+import 'package:web_socket_flutter/view/login_view.dart';
 import 'package:web_socket_flutter/view/profile_view.dart';
+import 'package:web_socket_flutter/utils/constants.dart';
 
 void main() => runApp(const Home());
 
@@ -14,6 +16,9 @@ class Home extends StatelessWidget {
     return MaterialApp(
       title: "PPLG Apps",
       home: const HomePage(),
+      routes: {
+        loginView: (context) => const LoginView(),
+      },
     );
   }
 }

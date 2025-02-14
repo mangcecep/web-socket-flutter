@@ -6,10 +6,17 @@ class Services {
   final url = Uri.parse("${Constants.url}student");
 
   Future<Map<String, dynamic>> deleteData(String id) async {
-    final response =
-        await http.delete(Uri.parse("${Constants.url}student/$id"));
+    final response = await http.delete(
+      Uri.parse("$url/$id"),
+      headers: {
+        "Accept": "application/json",
+      },
+    );
     var jsonData = await jsonDecode(response.body);
-    return jsonData;
+    return {
+      "data": jsonData,
+      "status": response.statusCode,
+    };
   }
 
   Future<Map<String, dynamic>> getData() async {

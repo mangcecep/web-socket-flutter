@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:web_socket_flutter/utils/constants.dart';
 import 'package:web_socket_flutter/utils/services.dart';
+import 'package:web_socket_flutter/view/login_view.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -15,6 +17,11 @@ class _HomeViewState extends State<HomeView> {
   TextEditingController firstName = TextEditingController();
   TextEditingController lastName = TextEditingController();
   TextEditingController major = TextEditingController();
+
+  TextEditingController firstNameEdit = TextEditingController();
+  TextEditingController lastNameEdit = TextEditingController();
+  TextEditingController majorEdit = TextEditingController();
+  late String classValueEdit = '';
 
   @override
   void initState() {
@@ -36,7 +43,9 @@ class _HomeViewState extends State<HomeView> {
       showDialog<String>(
         context: context,
         builder: (BuildContext context) => AlertDialog(
-          title: Text(onResponse['status'] == 422 ? 'Error!!' : 'Success!!'),
+          title: Text(onResponse['status'] == 422 || onResponse['status'] == 401
+              ? 'Error!!'
+              : 'Success!!'),
           content: SingleChildScrollView(
             child: ListBody(
               children: <Widget>[
@@ -48,12 +57,19 @@ class _HomeViewState extends State<HomeView> {
             TextButton(
               child: const Text('OK'),
               onPressed: () {
+                Navigator.of(context).pop();
+                if (onResponse['status'] == 401) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoginView()),
+                  );
+                  return;
+                }
                 onResponse['status'] == 422
                     ? null
                     : getDataFromAPI().then((onValue) async {
                         setState(() => data = onValue['data']);
                       });
-                Navigator.of(context).pop();
               },
             ),
           ],
@@ -173,7 +189,98 @@ class _HomeViewState extends State<HomeView> {
                     ),
                     Column(
                       children: [
-                        TextButton(onPressed: () {}, child: Icon(Icons.edit)),
+                        TextButton(
+                            onPressed: () {
+                              firstNameEdit.text = data[idx]['fname'];
+                              lastNameEdit.text = data[idx]['lname'];
+                              majorEdit.text = data[idx]['major'];
+
+                              setState(() {
+                                classValueEdit = data[idx]['classes'];
+                              });
+
+                              showModalBottomSheet(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return StatefulBuilder(builder:
+                                      (BuildContext context,
+                                          StateSetter setState) {
+                                    return SizedBox(
+                                      height: screenHeight,
+                                      child: Column(
+                                        children: [
+                                          Padding(
+                                            padding: const EdgeInsets.all(16.0),
+                                            child: DropdownButton<String>(
+                                              isExpanded: true,
+                                              value: classValueEdit.toString(),
+                                              onChanged: (val) => setState(() =>
+                                                  classValueEdit =
+                                                      val.toString()),
+                                              items: classes.map<
+                                                      DropdownMenuItem<String>>(
+                                                  (String value) {
+                                                return DropdownMenuItem(
+                                                  value: value,
+                                                  child: Text(value),
+                                                );
+                                              }).toList(),
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: TextFormField(
+                                              controller: firstNameEdit,
+                                              decoration: InputDecoration(
+                                                contentPadding:
+                                                    EdgeInsets.all(4.0),
+                                                hintText: "First Name",
+                                              ),
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: TextFormField(
+                                              controller: lastNameEdit,
+                                              decoration: InputDecoration(
+                                                  contentPadding:
+                                                      EdgeInsets.all(4.0),
+                                                  hintText: "Last Name"),
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: TextFormField(
+                                              controller: majorEdit,
+                                              decoration: InputDecoration(
+                                                  contentPadding:
+                                                      EdgeInsets.all(4.0),
+                                                  hintText: "Major"),
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor:
+                                                    Colors.purpleAccent,
+                                                elevation: 0,
+                                              ),
+                                              onPressed: () {},
+                                              child: Text(
+                                                "Submit",
+                                                selectionColor: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  });
+                                },
+                              );
+                            },
+                            child: Icon(Icons.edit)),
                         TextButton(
                             onPressed: () {
                               showDialog<String>(
@@ -196,15 +303,24 @@ class _HomeViewState extends State<HomeView> {
                                     ),
                                     TextButton(
                                       child: const Text('OK'),
-                                      onPressed: () async {
+                                      onPressed: () {
                                         Services()
                                             .deleteData(data[idx]['id'])
-                                            .then((onValue) {
-                                          getDataFromAPI()
-                                              .then((onValue) async {
-                                            setState(
-                                                () => data = onValue['data']);
-                                          });
+                                            .then((onValue) async {
+                                          var code = onValue['status'];
+                                          Navigator.of(context).pop();
+                                          if (code == 401) {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      const LoginView()),
+                                            );
+                                            return;
+                                          }
+                                          getDataFromAPI().then(
+                                              (onValue) async => setState(() =>
+                                                  data = onValue['data']));
                                           Navigator.of(context).pop();
                                         });
                                       },
