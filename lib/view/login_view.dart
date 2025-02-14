@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:web_socket_flutter/utils/services.dart';
 import 'package:web_socket_flutter/view/register_view.dart';
 
 class LoginView extends StatefulWidget {
@@ -11,6 +13,7 @@ class LoginView extends StatefulWidget {
 class _LoginViewState extends State<LoginView> {
   TextEditingController email = TextEditingController();
   TextEditingController password = TextEditingController();
+  String errMssg = '';
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +51,23 @@ class _LoginViewState extends State<LoginView> {
                 backgroundColor: Colors.purpleAccent,
                 elevation: 0,
               ),
-              onPressed: () => {},
+              onPressed: () async {
+                await Services()
+                    .postLogin(email.text, password.text)
+                    .then((onValue) async {
+                  if (onValue["status"] == 422 || onValue["status"] == 401) {
+                    setState(() => errMssg = onValue['data']['message']);
+                    return;
+                  }
+
+                  final SharedPreferences prefs =
+                      await SharedPreferences.getInstance();
+                  prefs.setString(
+                      "access_token", onValue['data']['access_token']);
+
+                  Navigator.of(context).pop();
+                });
+              },
               child: Text(
                 "Submit",
                 selectionColor: Colors.white,
@@ -66,6 +85,17 @@ class _LoginViewState extends State<LoginView> {
                 "register",
                 selectionColor: Colors.black,
               ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(
+              errMssg,
+              style: TextStyle(
+                color: Colors.red,
+                fontSize: 20,
+              ),
+              textAlign: TextAlign.center,
             ),
           ),
         ],

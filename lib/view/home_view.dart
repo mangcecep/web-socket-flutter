@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web_socket_flutter/utils/constants.dart';
 import 'package:web_socket_flutter/utils/services.dart';
 import 'package:web_socket_flutter/view/login_view.dart';
@@ -33,9 +34,17 @@ class _HomeViewState extends State<HomeView> {
 
   Future<Map<String, dynamic>> getDataFromAPI() => Services().getData();
 
-  onSubmit(context) {
+  onSubmit(context) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+
     Services()
-        .postData(classValue, major.text, firstName.text, lastName.text)
+        .postData(
+      classValue,
+      major.text,
+      firstName.text,
+      lastName.text,
+      prefs.get("access_token").toString(),
+    )
         .then((onResponse) {
       print("RESPON $onResponse");
       String message = onResponse['data']['message'].toString();
@@ -303,12 +312,17 @@ class _HomeViewState extends State<HomeView> {
                                     ),
                                     TextButton(
                                       child: const Text('OK'),
-                                      onPressed: () {
+                                      onPressed: () async {
+                                        final SharedPreferences prefs =
+                                            await SharedPreferences
+                                                .getInstance();
                                         Services()
-                                            .deleteData(data[idx]['id'])
+                                            .deleteData(
+                                          data[idx]['id'],
+                                          prefs.get("access_token").toString(),
+                                        )
                                             .then((onValue) async {
                                           var code = onValue['status'];
-                                          Navigator.of(context).pop();
                                           if (code == 401) {
                                             Navigator.push(
                                               context,
@@ -318,10 +332,10 @@ class _HomeViewState extends State<HomeView> {
                                             );
                                             return;
                                           }
+                                          Navigator.of(context).pop();
                                           getDataFromAPI().then(
                                               (onValue) async => setState(() =>
                                                   data = onValue['data']));
-                                          Navigator.of(context).pop();
                                         });
                                       },
                                     ),
