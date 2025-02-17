@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:web_socket_flutter/utils/constants.dart';
 import 'package:web_socket_flutter/utils/services.dart';
 import 'package:web_socket_flutter/view/login_view.dart';
 
@@ -46,7 +45,6 @@ class _HomeViewState extends State<HomeView> {
       prefs.get("access_token").toString(),
     )
         .then((onResponse) {
-      print("RESPON $onResponse");
       String message = onResponse['data']['message'].toString();
 
       showDialog<String>(
@@ -275,7 +273,84 @@ class _HomeViewState extends State<HomeView> {
                                                     Colors.purpleAccent,
                                                 elevation: 0,
                                               ),
-                                              onPressed: () {},
+                                              onPressed: () async {
+                                                final SharedPreferences prefs =
+                                                    await SharedPreferences
+                                                        .getInstance();
+
+                                                Services()
+                                                    .updateData(
+                                                  data[idx]['id'],
+                                                  classValueEdit,
+                                                  majorEdit.text,
+                                                  firstNameEdit.text,
+                                                  lastNameEdit.text,
+                                                  prefs
+                                                      .get("access_token")
+                                                      .toString(),
+                                                )
+                                                    .then((onValue) {
+                                                  String message =
+                                                      onValue['data']['message']
+                                                          .toString();
+
+                                                  showDialog<String>(
+                                                    context: context,
+                                                    builder: (BuildContext
+                                                            context) =>
+                                                        AlertDialog(
+                                                      title: Text(onValue[
+                                                                      'status'] ==
+                                                                  422 ||
+                                                              onValue['status'] ==
+                                                                  401
+                                                          ? 'Error!!'
+                                                          : 'Success!!'),
+                                                      content:
+                                                          SingleChildScrollView(
+                                                        child: ListBody(
+                                                          children: <Widget>[
+                                                            Text(message),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                      actions: <Widget>[
+                                                        TextButton(
+                                                          child:
+                                                              const Text('OK'),
+                                                          onPressed: () {
+                                                            Navigator.of(
+                                                                    context)
+                                                                .pop();
+                                                            if (onValue[
+                                                                    'status'] ==
+                                                                401) {
+                                                              Navigator.push(
+                                                                context,
+                                                                MaterialPageRoute(
+                                                                    builder:
+                                                                        (context) =>
+                                                                            const LoginView()),
+                                                              );
+                                                              return;
+                                                            }
+                                                            onValue['status'] ==
+                                                                    422
+                                                                ? null
+                                                                : getDataFromAPI()
+                                                                    .then(
+                                                                        (onValue) async {
+                                                                    setState(() => data =
+                                                                        onValue[
+                                                                            'data']);
+                                                                  });
+                                                          },
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+                                                });
+                                              },
                                               child: Text(
                                                 "Submit",
                                                 selectionColor: Colors.white,

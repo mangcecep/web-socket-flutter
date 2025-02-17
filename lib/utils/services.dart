@@ -5,6 +5,34 @@ import 'package:http/http.dart' as http;
 class Services {
   final url = Uri.parse("${Constants.url}student");
 
+  Future<Map<String, dynamic>> updateData(
+    String id,
+    String classes,
+    String major,
+    String firstName,
+    String lastName,
+    String token,
+  ) async {
+    final response = await http.put(
+      Uri.parse("$url/$id"),
+      headers: {
+        "Accept": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: {
+        "classes": classes,
+        "major": major,
+        "fname": firstName,
+        "lname": lastName
+      },
+    );
+    var jsonData = await jsonDecode(response.body);
+    return {
+      "data": jsonData,
+      "status": response.statusCode,
+    };
+  }
+
   Future<Map<String, dynamic>> deleteData(
     String id,
     String token,
