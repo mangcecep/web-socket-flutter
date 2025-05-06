@@ -1,24 +1,39 @@
 import 'package:circle_nav_bar/circle_nav_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:web_socket_flutter/view/history_view.dart';
 import 'package:web_socket_flutter/view/home_view.dart';
 import 'package:web_socket_flutter/view/login_view.dart';
 import 'package:web_socket_flutter/view/profile_view.dart';
-import 'package:web_socket_flutter/utils/constants.dart';
 
 void main() => runApp(const Home());
+
+final GoRouter _router = GoRouter(
+  routes: [
+    GoRoute(
+      path: '/',
+      builder: (_, __) => Scaffold(
+        appBar: AppBar(title: const Text('Home Screen')),
+      ),
+      routes: [
+        GoRoute(
+          path: 'details',
+          builder: (_, __) => Scaffold(
+            appBar: AppBar(title: const Text('Details Screen')),
+          ),
+        ),
+      ],
+    ),
+  ],
+);
 
 class Home extends StatelessWidget {
   const Home({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: "PPLG Apps",
-      home: const HomePage(),
-      routes: {
-        loginView: (context) => const LoginView(),
-      },
+    return MaterialApp.router(
+      routerConfig: _router,
     );
   }
 }
